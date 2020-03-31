@@ -1,70 +1,67 @@
-import React from 'react';
+import React, { Component } from 'react';
 import { MdShoppingCart } from 'react-icons/md';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import { ProductList } from './styles';
+import { formatPrice } from '../../util/format';
+import * as CartActions from '../../store/modules/cart/actions';
+import api from '../../services/api';
 
-export default function Home() {
-  return (
-    <ProductList>
-      <li>
-        <img
-          src="https://assets.adidas.com/images/w_840,h_840,f_auto,q_auto:sensitive,fl_lossy/fad7accefe7f465a8e53ab2300c37d75_9366/Tenis_Superstar_Branco_FV2806_01_standard.jpg"
-          alt="Adidas Superstar"
-        />
-        <strong>Tenis Superstar 2020</strong>
-        <span>R$229</span>
+class Home extends Component {
+  state = {
+    products: []
+  };
 
-        <button type="button">
-          <div>
-            <MdShoppingCart color="#fff" size={16} /> 3
-          </div>
-          <span>Adicionar ao carrinho</span>
-        </button>
-      </li>
-      <li>
-        <img
-          src="https://assets.adidas.com/images/w_840,h_840,f_auto,q_auto:sensitive,fl_lossy/fad7accefe7f465a8e53ab2300c37d75_9366/Tenis_Superstar_Branco_FV2806_01_standard.jpg"
-          alt="Adidas Superstar"
-        />
-        <strong>Tenis Superstar 2020</strong>
-        <span>R$229</span>
+  async componentDidMount() {
+    const response = await api.get('products');
+    const data = response.data.map(product => ({
+      ...product,
+      priceFormatted: formatPrice(product.price)
+    }));
+    this.setState({ products: data });
+  }
 
-        <button type="button">
-          <div>
-            <MdShoppingCart color="#fff" size={16} /> 3
-          </div>
-          <span>Adicionar ao carrinho</span>
-        </button>
-      </li>
-      <li>
-        <img
-          src="https://assets.adidas.com/images/w_840,h_840,f_auto,q_auto:sensitive,fl_lossy/fad7accefe7f465a8e53ab2300c37d75_9366/Tenis_Superstar_Branco_FV2806_01_standard.jpg"
-          alt="Adidas Superstar"
-        />
-        <strong>Tenis Superstar 2020</strong>
-        <span>R$229</span>
+  handleAddProduct = id => {
+    const { addToCartRequest } = this.props;
+    addToCartRequest(id);
+  };
 
-        <button type="button">
-          <div>
-            <MdShoppingCart color="#fff" size={16} /> 3
-          </div>
-          <span>Adicionar ao carrinho</span>
-        </button>
-      </li>
-      <li>
-        <img
-          src="https://assets.adidas.com/images/w_840,h_840,f_auto,q_auto:sensitive,fl_lossy/fad7accefe7f465a8e53ab2300c37d75_9366/Tenis_Superstar_Branco_FV2806_01_standard.jpg"
-          alt="Adidas Superstar"
-        />
-        <strong>Tenis Superstar 2020</strong>
-        <span>R$229</span>
+  render() {
+    const { products } = this.state;
+    const { amount } = this.props;
+    return (
+      <ProductList>
+        {products.map(product => (
+          <li key={product.id}>
+            <img src={product.image} alt={product.title} />
+            <strong>{product.title}</strong>
+            <span>{product.priceFormatted}</span>
 
-        <button type="button">
-          <div>
-            <MdShoppingCart color="#fff" size={16} /> 3
-          </div>
-          <span>Adicionar ao carrinho</span>
-        </button>
-      </li>
-    </ProductList>
-  );
+            <button
+              type="button"
+              onClick={() => this.handleAddProduct(product.id)}
+            >
+              <div>
+                <MdShoppingCart color="#fff" size={16} />{' '}
+                {amount[product.id] || 0}
+              </div>
+              <span>Adicionar ao carrinho</span>
+            </button>
+          </li>
+        ))}
+      </ProductList>
+    );
+  }
 }
+
+const mapStateToProps = state => ({
+  amount: state.cart.reduce((amount, product) => {
+    amount[product.id] = product.amount;
+    return amount;
+  }, {})
+});
+
+const mapDispatchToProps = dispatch =>
+  bindActionCreators(CartActions, dispatch);
+
+export default connect(mapStateToProps, mapDispatchToProps)(Home);
